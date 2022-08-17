@@ -178,7 +178,7 @@ func release(source string, destination string, output string, ruleSetOutput str
 	if err != nil {
 		log.Warn("missing destination latest release")
 	} else {
-		if os.Getenv("NO_SKIP") != "true" && strings.Contains(*destinationRelease.Name, *sourceRelease.Name) {
+		if os.Getenv("NO_SKIP") != "true" && strings.Contains(*destinationRelease.Name, *sourceRelease.TagName) {
 			log.Info("already latest")
 			setActionOutput("skip", "true")
 			return nil
@@ -215,6 +215,7 @@ func release(source string, destination string, output string, ruleSetOutput str
 
 	os.RemoveAll(ruleSetOutput)
 	err = os.MkdirAll(ruleSetOutput, 0o755)
+
 	if err != nil {
 		return err
 	}
@@ -244,7 +245,7 @@ func release(source string, destination string, output string, ruleSetOutput str
 		}
 		outputRuleSet.Close()
 	}
-	err = setActionOutput("tag", *sourceRelease.Name)
+	err = setActionOutput("tag", *sourceRelease.TagName)
 	if err != nil {
 		return err
 	}
@@ -265,7 +266,7 @@ func setActionOutput(name string, content string) error {
 }
 
 func main() {
-	err := release("Dreamacro/maxmind-geoip", "sagernet/sing-geoip", "geoip.db", "rule-set")
+	err := release("Loyalsoldier/geoip", "sagernet/sing-geoip", "geoip.db", "rule-set")
 	if err != nil {
 		log.Fatal(err)
 	}
