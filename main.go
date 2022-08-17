@@ -197,7 +197,7 @@ func release(source string, destination string) error {
 	if err != nil {
 		logrus.Warn("missing destination latest release")
 	} else {
-		if os.Getenv("NO_SKIP") != "true" && strings.Contains(*destinationRelease.Name, *sourceRelease.Name) {
+		if os.Getenv("NO_SKIP") != "true" && strings.Contains(*destinationRelease.Name, *sourceRelease.TagName) {
 			logrus.Info("already latest")
 			setActionOutput("skip", "true")
 			return nil
@@ -231,7 +231,7 @@ func release(source string, destination string) error {
 	if err != nil {
 		return err
 	}
-	err = setActionOutput("tag", *sourceRelease.Name)
+	err = setActionOutput("tag", *sourceRelease.TagName)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func main() {
 	if len(os.Args) >= 3 {
 		err = local(os.Args[1], os.Args[2], os.Args[3:])
 	} else {
-		err = release("Dreamacro/maxmind-geoip", "sagernet/sing-geoip")
+		err = release("Loyalsoldier/geoip", "1715173329/sing-geoip")
 	}
 	if err != nil {
 		logrus.Fatal(err)
