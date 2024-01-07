@@ -17,7 +17,8 @@ import (
 	"github.com/sagernet/sing/common"
 	E "github.com/sagernet/sing/common/exceptions"
 
-	"github.com/google/go-github/v45/github"
+	"github.com/google/go-github/v49/github"
+	"golang.org/x/oauth2"
 	"github.com/maxmind/mmdbwriter"
 	"github.com/maxmind/mmdbwriter/inserter"
 	"github.com/maxmind/mmdbwriter/mmdbtype"
@@ -30,7 +31,13 @@ var githubClient *github.Client
 func init() {
 	accessToken, loaded := os.LookupEnv("ACCESS_TOKEN")
 	if !loaded {
-		githubClient = github.NewClient(nil)
+		githubToken, _ := os.LookupEnv("GITHUB_TOKEN")
+		ctx := context.Background()
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: githubToken},
+		)
+		tc := oauth2.NewClient(ctx, ts)
+		githubClient = github.NewClient(tc)
 		return
 	}
 	transport := &github.BasicAuthTransport{
@@ -200,11 +207,11 @@ func release(source string, destination string, output string, ruleSetOutput str
 		return err
 	}
 
-	writer, err = newWriter(metadata, []string{"cn"})
+	writer, err = newWriter(metadata, []string{"cn", "private"})
 	if err != nil {
 		return err
 	}
-	err = write(writer, countryMap, "geoip-cn.db", []string{"cn"})
+	err = write(writer, countryMap, "geoip-cn.db", []string{"cn", "private"})
 	if err != nil {
 		return err
 	}
@@ -241,12 +248,24 @@ func release(source string, destination string, output string, ruleSetOutput str
 		outputRuleSet.Close()
 	}
 
-	setActionOutput("tag", *sourceRelease.Name)
+	err = setActionOutput("tag", *sourceRelease.Name)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func setActionOutput(name string, content string) {
-	os.Stdout.WriteString("::set-output name=" + name + "::" + content + "\n")
+func setActionOutput(name string, content string) error {
+	file, err := os.OpenFile(os.Getenv("GITHUB_OUTPUT"), os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.WriteString(name + "=" + content + "\n")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
